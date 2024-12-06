@@ -9,9 +9,17 @@ const client = new AssemblyAI({
 
 interface AudioQuizGameProps {
   audioUrl: string;
+  onComplete: () => void;
+  category: string;
+  points: number;
 }
 
-export default function AudioQuizGame({ audioUrl }: AudioQuizGameProps) {
+export default function AudioQuizGame({
+  audioUrl,
+  onComplete,
+  category,
+  points,
+}: AudioQuizGameProps) {
   const [gameState, setGameState] = useState<"initial" | "question" | "result">(
     "initial"
   );
@@ -87,26 +95,15 @@ export default function AudioQuizGame({ audioUrl }: AudioQuizGameProps) {
     }
   };
 
-  const resetGame = () => {
-    setGameState("initial");
-    setQuestion("");
-    setUserAnswer("");
-    setCorrectAnswer("");
-    setGameResult(null);
-    setHasPlayed(false);
-    setTranscriptId("");
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-    }
-  };
-
   const handleAudioEnded = () => {
     setHasPlayed(true);
   };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold text-center mb-8">Audio Quiz Game</h1>
+      <h1 className="text-3xl font-bold text-center mb-8">
+        {category} - ${points}
+      </h1>
 
       {gameState === "initial" && (
         <div className="space-y-4">
@@ -151,7 +148,7 @@ export default function AudioQuizGame({ audioUrl }: AudioQuizGameProps) {
           <textarea
             value={userAnswer}
             onChange={(e) => setUserAnswer(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border rounded text-black"
             rows={3}
             placeholder="Type your answer here..."
           />
@@ -174,13 +171,13 @@ export default function AudioQuizGame({ audioUrl }: AudioQuizGameProps) {
           >
             {gameResult === "win"
               ? "Congratulations! You got it right!"
-              : "Sorry, try again!"}
+              : "Sorry, that's incorrect!"}
           </h2>
           <button
-            onClick={resetGame}
+            onClick={onComplete}
             className="py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
-            Play Again
+            Next Question
           </button>
         </div>
       )}
