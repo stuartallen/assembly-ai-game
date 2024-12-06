@@ -20,6 +20,16 @@ const POKEMON_AUDIO =
 const POKEMON_THUMBNAIL =
   "https://utfs.io/f/RjVHnBtym1HvnWevDCw2OmrFTEzxdJ6Rf5PQM84objtHY0NI";
 
+const SCOTLAND_AUDIO =
+  "https://utfs.io/f/RjVHnBtym1Hv4ag9MXSnuyDO2Bi95Ao0eaV4plkxwmCzErhL";
+const SCOTLAND_THUMBNAIL =
+  "https://utfs.io/f/RjVHnBtym1HvuIrMcMDuEOkfx9Dtdb6WrPKiqyjTm7aQXhJ5";
+
+const CHEESE_AUDIO =
+  "https://utfs.io/f/RjVHnBtym1HvDQKNavn40FkVf6YjJIsZ1rvBNAnMQGET8td9";
+const CHEESE_THUMBNAIL =
+  "https://utfs.io/f/RjVHnBtym1HvVTfkmk0j4qKwIPYpXCmzeGZy63lFS7NgOAHD";
+
 const initialCategories = [
   {
     audio: SEA_TURTLES_AUDIO,
@@ -40,6 +50,22 @@ const initialCategories = [
   {
     audio: POKEMON_AUDIO,
     thumbnail: POKEMON_THUMBNAIL,
+    questions: [100, 200, 300, 400, 500].map((points) => ({
+      points,
+      isPlayed: false,
+    })),
+  },
+  {
+    audio: SCOTLAND_AUDIO,
+    thumbnail: SCOTLAND_THUMBNAIL,
+    questions: [100, 200, 300, 400, 500].map((points) => ({
+      points,
+      isPlayed: false,
+    })),
+  },
+  {
+    audio: CHEESE_AUDIO,
+    thumbnail: CHEESE_THUMBNAIL,
     questions: [100, 200, 300, 400, 500].map((points) => ({
       points,
       isPlayed: false,
