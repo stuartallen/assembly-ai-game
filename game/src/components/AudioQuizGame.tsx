@@ -50,19 +50,21 @@ export default function AudioQuizGame({
         // Step 2: Generate a question using LeMUR
         const { response: question } = await client.lemur.task({
           transcript_ids: [transcript.id],
-          prompt:
-            `Generate a ${difficulty} difficulty question about the main topic discussed in this audio. ` +
-            `For easy questions, focus on basic facts and main ideas. ` +
-            `For medium questions, ask about specific details and relationships. ` +
-            `For hard questions, require deeper analysis or connecting multiple concepts. ` +
-            `It is very important that you do not answer the question yourself.`,
+          prompt: `Generate a ${difficulty} difficulty question about the audio that has a one word answer. Only give the question. +
+            For easy questions, focus on basic facts and main ideas. Make the questions fun, obscure, or offbeat +
+            For medium questions, ask about specific details and relationships. You can extend the question and relate it to general knowledge.  +
+            For hard questions, ask an extrmely specific esoteric question related to the audio that can also bring in outside knowledge about assembly AI +
+            It is very important that you do not answer the question yourself.`,
           final_model: "anthropic/claude-3-5-sonnet",
         });
 
         // Step 3: Generate the answer to store
         const { response: answer } = await client.lemur.task({
           transcript_ids: [transcript.id],
-          prompt: "What is the correct answer to this question: " + question,
+          prompt:
+            "What is the correct answer to this question: " +
+            question +
+            ". It is very important your answer is concise and 1 sentence or less",
           final_model: "anthropic/claude-3-5-sonnet",
         });
 
@@ -92,6 +94,8 @@ export default function AudioQuizGame({
                 For easy questions, be more lenient with exact wording as long as the main idea is correct.
                 For medium questions, require more specific details to match.
                 For hard questions, be strict about accuracy and completeness.
+                For any level of difficulty, if the answers are exactly the same, return "true".
+                For any level of difficulty, if there is a mere formatting difference or extra word like "the" or "a", return "true".
                 Answer 1: ${userAnswer}
                 Answer 2: ${correctAnswer}`,
         final_model: "anthropic/claude-3-5-sonnet",
