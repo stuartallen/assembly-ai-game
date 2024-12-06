@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { AssemblyAI } from "assemblyai";
 
 const client = new AssemblyAI({
@@ -19,22 +19,18 @@ export default function GamePage() {
   const startGame = async () => {
     setIsLoading(true);
     try {
-      // Convert Google Drive view URL to direct download URL
-      const fileId = "1C3tX3G6Qk0Gh8gCiXh_IbWr-oHfaNDgn";
-      const directDownloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+      const directDownloadUrl = `https://utfs.io/f/RjVHnBtym1HvfJYkg24yLP65HltyCYGUE8sw0c4RJgDjrbfN`;
 
       // Step 2: Transcribe using the direct download URL
       const transcript = await client.transcripts.transcribe({
         audio: directDownloadUrl,
       });
 
-      console.log("Transcript:", transcript);
-
       // Step 3: Generate a question using LeMUR
       const { response: question } = await client.lemur.task({
         transcript_ids: [transcript.id],
         prompt:
-          "Generate a question about the main topic discussed in this audio.",
+          "Generate a question about the main topic discussed in this audio. It is very important that you do not answer the question yourself.",
         final_model: "anthropic/claude-3-5-sonnet",
       });
 
@@ -44,6 +40,8 @@ export default function GamePage() {
         prompt: "What is the correct answer to this question: " + question,
         final_model: "anthropic/claude-3-5-sonnet",
       });
+
+      console.log({ answer });
 
       setQuestion(question);
       sessionStorage.setItem("currentAnswer", answer);
@@ -94,9 +92,13 @@ export default function GamePage() {
         {gameState === "initial" && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <p className="text-gray-600">
-                Audio file loaded from Google Drive
-              </p>
+              <audio controls className="w-full">
+                <source
+                  src="https://utfs.io/f/RjVHnBtym1HvfJYkg24yLP65HltyCYGUE8sw0c4RJgDjrbfN"
+                  type="audio/mpeg"
+                />
+                Your browser does not support the audio element.
+              </audio>
             </div>
             <button
               onClick={startGame}
