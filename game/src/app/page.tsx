@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AssemblyAI } from "assemblyai";
 
 const client = new AssemblyAI({
-  apiKey: process.env.NEXT_PUBLIC_ASSEMBLYAI_API_KEY,
+  apiKey: process.env.NEXT_PUBLIC_ASSEMBLYAI_API_KEY!,
 });
 
 export default function GamePage() {
@@ -16,32 +16,32 @@ export default function GamePage() {
   const [gameResult, setGameResult] = useState<"win" | "lose" | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const audioFile = "/videos/poke-clip.mp3";
-
   const startGame = async () => {
     setIsLoading(true);
     try {
-      // Step 1: Transcribe the audio
+      const directDownloadUrl = `https://utfs.io/f/RjVHnBtym1HvfJYkg24yLP65HltyCYGUE8sw0c4RJgDjrbfN`;
+
+      // Step 2: Transcribe using the direct download URL
       const transcript = await client.transcripts.transcribe({
-        audio: `${window.location.origin}/videos/poke-clip.mp3`,
+        audio: directDownloadUrl,
       });
 
-      console.log({ transcript });
-
-      // Step 2: Generate a question using LeMUR
+      // Step 3: Generate a question using LeMUR
       const { response: question } = await client.lemur.task({
         transcript_ids: [transcript.id],
         prompt:
-          "Generate a question about the main topic discussed in this audio.",
+          "Generate a question about the main topic discussed in this audio. It is very important that you do not answer the question yourself.",
         final_model: "anthropic/claude-3-5-sonnet",
       });
 
-      // Step 3: Generate the answer to store
+      // Step 4: Generate the answer to store
       const { response: answer } = await client.lemur.task({
         transcript_ids: [transcript.id],
         prompt: "What is the correct answer to this question: " + question,
         final_model: "anthropic/claude-3-5-sonnet",
       });
+
+      console.log({ answer });
 
       setQuestion(question);
       sessionStorage.setItem("currentAnswer", answer);
@@ -91,10 +91,15 @@ export default function GamePage() {
 
         {gameState === "initial" && (
           <div className="space-y-4">
-            <audio controls className="w-full">
-              <source src={audioFile} type="audio/mpeg" />
-              Your browser does not support the audio element.
-            </audio>
+            <div className="space-y-2">
+              <audio controls className="w-full">
+                <source
+                  src="https://utfs.io/f/RjVHnBtym1HvfJYkg24yLP65HltyCYGUE8sw0c4RJgDjrbfN"
+                  type="audio/mpeg"
+                />
+                Your browser does not support the audio element.
+              </audio>
+            </div>
             <button
               onClick={startGame}
               disabled={isLoading}
