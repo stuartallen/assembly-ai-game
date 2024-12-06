@@ -1,101 +1,150 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import { AssemblyAI } from "assemblyai";
+
+const client = new AssemblyAI({
+  apiKey: process.env.NEXT_PUBLIC_ASSEMBLYAI_API_KEY,
+});
+
+export default function GamePage() {
+  const [gameState, setGameState] = useState<"initial" | "question" | "result">(
+    "initial"
+  );
+  const [question, setQuestion] = useState<string>("");
+  const [userAnswer, setUserAnswer] = useState<string>("");
+  const [gameResult, setGameResult] = useState<"win" | "lose" | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const audioFile = "/videos/poke-clip.mp3";
+
+  const startGame = async () => {
+    setIsLoading(true);
+    try {
+      // Step 1: Transcribe the audio
+      const transcript = await client.transcripts.transcribe({
+        audio: `${window.location.origin}/videos/poke-clip.mp3`,
+      });
+
+      console.log({ transcript });
+
+      // Step 2: Generate a question using LeMUR
+      const { response: question } = await client.lemur.task({
+        transcript_ids: [transcript.id],
+        prompt:
+          "Generate a question about the main topic discussed in this audio.",
+        final_model: "anthropic/claude-3-5-sonnet",
+      });
+
+      // Step 3: Generate the answer to store
+      const { response: answer } = await client.lemur.task({
+        transcript_ids: [transcript.id],
+        prompt: "What is the correct answer to this question: " + question,
+        final_model: "anthropic/claude-3-5-sonnet",
+      });
+
+      setQuestion(question);
+      sessionStorage.setItem("currentAnswer", answer);
+      setGameState("question");
+    } catch (error) {
+      console.error("Error starting game:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const checkAnswer = async () => {
+    setIsLoading(true);
+    try {
+      const correctAnswer = sessionStorage.getItem("currentAnswer");
+
+      // Use LeMUR to compare answers
+      const { response: comparison } = await client.lemur.task({
+        prompt: `Compare these two answers and respond only with "true" if they mean the same thing, or "false" if they don't:
+                Answer 1: ${userAnswer}
+                Answer 2: ${correctAnswer}`,
+        final_model: "anthropic/claude-3-5-sonnet",
+      });
+
+      const isCorrect = comparison.toLowerCase().trim() === "true";
+      setGameResult(isCorrect ? "win" : "lose");
+      setGameState("result");
+    } catch (error) {
+      console.error("Error checking answer:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetGame = () => {
+    setGameState("initial");
+    setQuestion("");
+    setUserAnswer("");
+    setGameResult(null);
+    sessionStorage.removeItem("currentAnswer");
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <main className="min-h-screen p-8">
+      <div className="max-w-2xl mx-auto space-y-6">
+        <h1 className="text-3xl font-bold text-center mb-8">Audio Quiz Game</h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+        {gameState === "initial" && (
+          <div className="space-y-4">
+            <audio controls className="w-full">
+              <source src={audioFile} type="audio/mpeg" />
+              Your browser does not support the audio element.
+            </audio>
+            <button
+              onClick={startGame}
+              disabled={isLoading}
+              className="w-full py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
+            >
+              {isLoading ? "Loading..." : "Start Game"}
+            </button>
+          </div>
+        )}
+
+        {gameState === "question" && (
+          <div className="space-y-4">
+            <p className="text-xl">{question}</p>
+            <textarea
+              value={userAnswer}
+              onChange={(e) => setUserAnswer(e.target.value)}
+              className="w-full p-2 border rounded"
+              rows={3}
+              placeholder="Type your answer here..."
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+            <button
+              onClick={checkAnswer}
+              disabled={isLoading || !userAnswer.trim()}
+              className="w-full py-2 px-4 bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-400"
+            >
+              {isLoading ? "Checking..." : "Submit Answer"}
+            </button>
+          </div>
+        )}
+
+        {gameState === "result" && (
+          <div className="space-y-4 text-center">
+            <h2
+              className={`text-2xl font-bold ${
+                gameResult === "win" ? "text-green-500" : "text-red-500"
+              }`}
+            >
+              {gameResult === "win"
+                ? "Congratulations! You got it right!"
+                : "Sorry, try again!"}
+            </h2>
+            <button
+              onClick={resetGame}
+              className="py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Play Again
+            </button>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
