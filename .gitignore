@@ -38,3 +38,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Environment files
+.env
+.env*.local
+.env.development
+.env.production
+
+# TypeScript environment declaration
+.env.d.ts
+
+# Keep example file
+!.env.example
+
+# Other common Next.js entries that should be here
+.next/
+node_modules/
