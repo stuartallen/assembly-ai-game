@@ -3,45 +3,43 @@
 import { useState } from "react";
 import AudioQuizGame from "@/components/AudioQuizGame";
 import JeopardyBoard from "@/components/JeopardyBoard";
+import { Category } from "@/components/JeopardyBoard";
+
+const SEA_TURTLES_AUDIO =
+  "https://utfs.io/f/RjVHnBtym1HvlViTv07CEL5sxi9XUe23mICzbgB1aMTDtJVF";
+const SEA_TURTLES_THUMBNAIL =
+  "https://utfs.io/f/RjVHnBtym1HvrYESkQ4fqjgaVUG8BJdi5uv6XS3csoZCLWz9";
+
+const PASTOR_AUDIO =
+  "https://utfs.io/f/RjVHnBtym1HvsY85sfRGpm4FQ1L7URvVezDNWcjiSnJ2Y0gX";
+const PASTOR_THUMBNAIL =
+  "https://utfs.io/f/RjVHnBtym1Hv7h4L9YsrHo4Bl96Wjw7NxZc3IkphCuiUsq1O";
+
+const POKEMON_AUDIO =
+  "https://utfs.io/f/RjVHnBtym1HvfJYkg24yLP65HltyCYGUE8sw0c4RJgDjrbfN";
+const POKEMON_THUMBNAIL =
+  "https://utfs.io/f/RjVHnBtym1HvnWevDCw2OmrFTEzxdJ6Rf5PQM84objtHY0NI";
 
 const initialCategories = [
   {
-    name: "History",
+    audio: SEA_TURTLES_AUDIO,
+    thumbnail: SEA_TURTLES_THUMBNAIL,
     questions: [100, 200, 300, 400, 500].map((points) => ({
       points,
       isPlayed: false,
     })),
   },
   {
-    name: "Science",
+    audio: PASTOR_AUDIO,
+    thumbnail: PASTOR_THUMBNAIL,
     questions: [100, 200, 300, 400, 500].map((points) => ({
       points,
       isPlayed: false,
     })),
   },
   {
-    name: "Sports",
-    questions: [100, 200, 300, 400, 500].map((points) => ({
-      points,
-      isPlayed: false,
-    })),
-  },
-  {
-    name: "Geography",
-    questions: [100, 200, 300, 400, 500].map((points) => ({
-      points,
-      isPlayed: false,
-    })),
-  },
-  {
-    name: "Entertainment",
-    questions: [100, 200, 300, 400, 500].map((points) => ({
-      points,
-      isPlayed: false,
-    })),
-  },
-  {
-    name: "Literature",
+    audio: POKEMON_AUDIO,
+    thumbnail: POKEMON_THUMBNAIL,
     questions: [100, 200, 300, 400, 500].map((points) => ({
       points,
       isPlayed: false,
@@ -52,24 +50,37 @@ const initialCategories = [
 export default function GamePage() {
   const [categories, setCategories] = useState(initialCategories);
   const [selectedTile, setSelectedTile] = useState<{
-    category: string;
+    category: {
+      audio: string;
+      thumbnail: string;
+    };
     points: number;
+    difficulty: "easy" | "medium" | "hard";
   } | null>(null);
-  const audioUrl =
-    "https://utfs.io/f/RjVHnBtym1HvfJYkg24yLP65HltyCYGUE8sw0c4RJgDjrbfN";
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
-  const handleTileSelect = (category: string, points: number) => {
-    setSelectedTile({ category, points });
+  const getDifficulty = (points: number): "easy" | "medium" | "hard" => {
+    if (points <= 200) return "easy";
+    if (points <= 400) return "medium";
+    return "hard";
+  };
+
+  const handleTileSelect = (category: Category, points: number) => {
+    setSelectedTile({
+      category,
+      points,
+      difficulty: getDifficulty(points),
+    });
   };
 
   const handleQuizComplete = () => {
     setCategories((prev) =>
       prev.map((cat) => {
-        if (cat.name === selectedTile?.category) {
+        if (cat.audio === selectedTile?.category.audio) {
           return {
             ...cat,
             questions: cat.questions.map((q) =>
-              q.points === selectedTile.points ? { ...q, isPlayed: true } : q
+              q.points === selectedTile?.points ? { ...q, isPlayed: true } : q
             ),
           };
         }
@@ -79,19 +90,23 @@ export default function GamePage() {
     setSelectedTile(null);
   };
 
+  console.log({ audioUrl, selectedTile });
+
   return (
     <main className="min-h-screen p-8 bg-gray-900 text-white">
-      {selectedTile ? (
+      {selectedTile && audioUrl ? (
         <AudioQuizGame
           audioUrl={audioUrl}
           onComplete={handleQuizComplete}
           category={selectedTile.category}
           points={selectedTile.points}
+          difficulty={selectedTile.difficulty}
         />
       ) : (
         <JeopardyBoard
           categories={categories}
           onTileSelect={handleTileSelect}
+          setAudioUrl={setAudioUrl}
         />
       )}
     </main>
