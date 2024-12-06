@@ -116,10 +116,8 @@ export default function GamePage() {
     setSelectedTile(null);
   };
 
-  console.log({ audioUrl, selectedTile });
-
   return (
-    <main className="min-h-screen p-8 bg-gray-900 text-white">
+    <main className="min-h-screen p-8 bg-gray-900 text-white h-screen overflow-hidden">
       {selectedTile && audioUrl ? (
         <AudioQuizGame
           audioUrl={audioUrl}
