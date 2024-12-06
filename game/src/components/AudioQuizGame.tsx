@@ -10,8 +10,12 @@ const client = new AssemblyAI({
 interface AudioQuizGameProps {
   audioUrl: string;
   onComplete: () => void;
-  category: string;
+  category: {
+    audio: string;
+    thumbnail: string;
+  };
   points: number;
+  difficulty: "easy" | "medium" | "hard";
 }
 
 export default function AudioQuizGame({
@@ -19,6 +23,7 @@ export default function AudioQuizGame({
   onComplete,
   category,
   points,
+  difficulty,
 }: AudioQuizGameProps) {
   const [gameState, setGameState] = useState<"initial" | "question" | "result">(
     "initial"
@@ -46,7 +51,11 @@ export default function AudioQuizGame({
         const { response: question } = await client.lemur.task({
           transcript_ids: [transcript.id],
           prompt:
-            "Generate a question about the main topic discussed in this audio. It is very important that you do not answer the question yourself.",
+            `Generate a ${difficulty} difficulty question about the main topic discussed in this audio. ` +
+            `For easy questions, focus on basic facts and main ideas. ` +
+            `For medium questions, ask about specific details and relationships. ` +
+            `For hard questions, require deeper analysis or connecting multiple concepts. ` +
+            `It is very important that you do not answer the question yourself.`,
           final_model: "anthropic/claude-3-5-sonnet",
         });
 
@@ -79,7 +88,10 @@ export default function AudioQuizGame({
       // Use LeMUR to compare answers
       const { response: comparison } = await client.lemur.task({
         transcript_ids: [transcriptId],
-        prompt: `Compare these two answers and respond only with "true" if they mean the same thing, or "false" if they don't:
+        prompt: `Compare these two answers for a ${difficulty} difficulty question and respond only with "true" if they mean the same thing, or "false" if they don't:
+                For easy questions, be more lenient with exact wording as long as the main idea is correct.
+                For medium questions, require more specific details to match.
+                For hard questions, be strict about accuracy and completeness.
                 Answer 1: ${userAnswer}
                 Answer 2: ${correctAnswer}`,
         final_model: "anthropic/claude-3-5-sonnet",
@@ -101,9 +113,14 @@ export default function AudioQuizGame({
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold text-center mb-8">
-        {category} - ${points}
-      </h1>
+      <div className="text-center">
+        <img
+          src={category.thumbnail}
+          alt="Category thumbnail"
+          className="w-32 h-32 object-cover rounded mx-auto mb-4"
+        />
+        <h1 className="text-3xl font-bold mb-8">${points}</h1>
+      </div>
 
       {gameState === "initial" && (
         <div className="space-y-4">
@@ -173,9 +190,19 @@ export default function AudioQuizGame({
               ? "Congratulations! You got it right!"
               : "Sorry, that's incorrect!"}
           </h2>
+          <div className="space-y-2 mt-4">
+            <div className="p-4 bg-gray-800 rounded">
+              <h3 className="text-lg font-semibold mb-2">Your Answer:</h3>
+              <p className="text-gray-300">{userAnswer}</p>
+            </div>
+            <div className="p-4 bg-gray-800 rounded">
+              <h3 className="text-lg font-semibold mb-2">Correct Answer:</h3>
+              <p className="text-gray-300">{correctAnswer}</p>
+            </div>
+          </div>
           <button
             onClick={onComplete}
-            className="py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600 mt-4"
           >
             Next Question
           </button>

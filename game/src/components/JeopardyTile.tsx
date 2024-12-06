@@ -1,12 +1,14 @@
 interface JeopardyTileProps {
-  category: string;
+  category: {
+    audio: string;
+    thumbnail: string;
+  };
   points: number;
   isPlayed: boolean;
   onSelect: () => void;
 }
 
 export default function JeopardyTile({
-  category,
   points,
   isPlayed,
   onSelect,
