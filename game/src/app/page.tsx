@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { AssemblyAI } from "assemblyai";
 
 const client = new AssemblyAI({
@@ -13,8 +13,12 @@ export default function GamePage() {
   );
   const [question, setQuestion] = useState<string>("");
   const [userAnswer, setUserAnswer] = useState<string>("");
+  const [correctAnswer, setCorrectAnswer] = useState<string>("");
   const [gameResult, setGameResult] = useState<"win" | "lose" | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasPlayed, setHasPlayed] = useState(false);
+  const [transcriptId, setTranscriptId] = useState<string>("");
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const startGame = async () => {
     setIsLoading(true);
@@ -25,6 +29,8 @@ export default function GamePage() {
       const transcript = await client.transcripts.transcribe({
         audio: directDownloadUrl,
       });
+
+      setTranscriptId(transcript.id);
 
       // Step 3: Generate a question using LeMUR
       const { response: question } = await client.lemur.task({
@@ -41,10 +47,8 @@ export default function GamePage() {
         final_model: "anthropic/claude-3-5-sonnet",
       });
 
-      console.log({ answer });
-
       setQuestion(question);
-      sessionStorage.setItem("currentAnswer", answer);
+      setCorrectAnswer(answer);
       setGameState("question");
     } catch (error) {
       console.error("Error starting game:", error);
@@ -56,10 +60,9 @@ export default function GamePage() {
   const checkAnswer = async () => {
     setIsLoading(true);
     try {
-      const correctAnswer = sessionStorage.getItem("currentAnswer");
-
       // Use LeMUR to compare answers
       const { response: comparison } = await client.lemur.task({
+        transcript_ids: [transcriptId],
         prompt: `Compare these two answers and respond only with "true" if they mean the same thing, or "false" if they don't:
                 Answer 1: ${userAnswer}
                 Answer 2: ${correctAnswer}`,
@@ -80,8 +83,17 @@ export default function GamePage() {
     setGameState("initial");
     setQuestion("");
     setUserAnswer("");
+    setCorrectAnswer("");
     setGameResult(null);
-    sessionStorage.removeItem("currentAnswer");
+    setHasPlayed(false);
+    setTranscriptId("");
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+    }
+  };
+
+  const handleAudioEnded = () => {
+    setHasPlayed(true);
   };
 
   return (
@@ -92,20 +104,34 @@ export default function GamePage() {
         {gameState === "initial" && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <audio controls className="w-full">
+              <audio
+                ref={audioRef}
+                controls={!hasPlayed}
+                onEnded={handleAudioEnded}
+                className="w-full"
+              >
                 <source
                   src="https://utfs.io/f/RjVHnBtym1HvfJYkg24yLP65HltyCYGUE8sw0c4RJgDjrbfN"
                   type="audio/mpeg"
                 />
                 Your browser does not support the audio element.
               </audio>
+              {hasPlayed && (
+                <p className="text-sm text-gray-600">
+                  Audio has been played. Ready to start the game!
+                </p>
+              )}
             </div>
             <button
               onClick={startGame}
-              disabled={isLoading}
+              disabled={isLoading || !hasPlayed}
               className="w-full py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
             >
-              {isLoading ? "Loading..." : "Start Game"}
+              {isLoading
+                ? "Loading..."
+                : hasPlayed
+                ? "Start Game"
+                : "Please listen to the audio first"}
             </button>
           </div>
         )}
