@@ -62,9 +62,8 @@ export default function AudioQuizGame({
         const { response: answer } = await client.lemur.task({
           transcript_ids: [transcript.id],
           prompt:
-            "What is the correct answer to this question: " +
-            question +
-            ". It is very important your answer is concise and 1 sentence or less",
+            "What is the correct one to two word answer or proper noun or idiom or phraseto this question? Please be very conscise and definitive " +
+            question,
           final_model: "anthropic/claude-3-5-sonnet",
         });
 
